@@ -1,3 +1,4 @@
+```java
 /*
  * SPDX-FileCopyrightText: Copyright © 2017 WebGoat authors
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -88,11 +90,13 @@ public class FileServer {
     // DO NOT use multipartFile.transferTo(), see
     // https://stackoverflow.com/questions/60336929/java-nio-file-nosuchfileexception-when-file-transferto-is-called
     try (InputStream is = multipartFile.getInputStream()) {
-      var destinationFile = destinationDir.toPath().resolve(multipartFile.getOriginalFilename());
+      // Sanitize filename to prevent path traversal
+      String sanitizedFilename = FilenameUtils.getName(multipartFile.getOriginalFilename());
+      var destinationFile = destinationDir.toPath().resolve(sanitizedFilename);
       Files.deleteIfExists(destinationFile);
       Files.copy(is, destinationFile);
     }
-    log.debug("File saved to {}", new File(destinationDir, multipartFile.getOriginalFilename()));
+    log.debug("File saved to {}", new File(destinationDir, sanitizedFilename));
 
     return new ModelAndView(
         new RedirectView("files", true),
@@ -145,3 +149,4 @@ public class FileServer {
     }
   }
 }
+```
